@@ -5,7 +5,7 @@ from pathlib import Path
 
 import cppyy
 import graphlib
-from transpile.generator import PyToCppVisitor, read_ast, to_cpp
+from transpile.generator import PyToCppTransformer, read_ast, to_cpp
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("test")
@@ -30,7 +30,7 @@ def test_dumpast():
 
 
 def test_visit_ast():
-    visitor = PyToCppVisitor()
+    visitor = PyToCppTransformer()
     my_ast = read_ast(testfile)
     cpp_src = to_cpp(my_ast)
     #cppyy.cppdef(cpp_src)
