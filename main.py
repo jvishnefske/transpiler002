@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger()
 
 
-def main(name):
+def main():
     # Use a breakpoint in the code line below to debug your script.
     # Press ⌘F8 to toggle the breakpoint.
     parser = argparse.ArgumentParser(description='Process a Python file')

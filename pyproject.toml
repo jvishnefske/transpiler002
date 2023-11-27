@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "pythonproject"
+name = "transpile"
 version = "0.1.0"
 description = ""
 authors = ["John Vishnefske <jvishnefske@gmail.com>"]
@@ -7,6 +7,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
+cppyy = "3.1.2"
+Jinja2 = "3.1.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
