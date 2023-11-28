@@ -1,5 +1,5 @@
 import ast
-from transpile.details import *
+from transpile.details import cpp_reserved, c_reserved
 
 
 def read_ast(testfile):
@@ -10,7 +10,7 @@ def read_ast(testfile):
 
 def read_file(filename):
     # Read the Python file contents
-    with open("myfile.py", "r") as f:
+    with open(filename, "r") as f:
         source_code = f.read()
 
     # Parse the source code into an AST
@@ -80,12 +80,14 @@ class PyToCppTransformer(ast.NodeTransformer):
 
     def check_identifier(self, node):
         if node.id in cpp_reserved:
-            throw NotImplementedError
-        if node.id in c_reserved
-            throw NotImplementedError
+            raise NotImplementedError
+        if node.id in c_reserved:
+            raise NotImplementedError
 
 
 Unparser = ast._Unparser
+
+
 class CppUnparser(Unparser):
     def visit_CppCodeBlock(self, node):
         self.fill("{")
@@ -98,7 +100,7 @@ class CppUnparser(Unparser):
         self.write("};")
 
     def visit_CppVariableDeclaration(self, node):
-        self.write(f"self.type, self.id")
+        self.write(f"constexpr {self.type}, {self.id};")
 
     def visit_CppStruct(self, node):
         self.write("struct ")
