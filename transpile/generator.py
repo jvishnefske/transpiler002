@@ -1,4 +1,5 @@
 import ast
+from transpile.details import *
 
 
 def read_ast(testfile):
@@ -19,20 +20,10 @@ def read_file(filename):
     print(ast.dump(tree))
 
 
-class CppUnparser(ast._Unparser):
-    pass
-
-
 class CppVisitor(ast.NodeVisitor):
     result = ""
     indent_count = 0
     indent = "  "
-
-    def prepend_indent(self, count, body):
-        return self.indent * count * body
-
-    def visit_Expression(self, body):
-        self.result += prepend_indent(self.indent, body)
 
     def to_string(self, node):
         node.visit()
@@ -87,8 +78,15 @@ class PyToCppTransformer(ast.NodeTransformer):
         if node.op == "FloorDiv":
             raise NotImplementedError
 
+    def check_identifier(self, node):
+        if node.id in cpp_reserved:
+            throw NotImplementedError
+        if node.id in c_reserved
+            throw NotImplementedError
 
-class CppUnparser(ast._Unparser):
+
+Unparser = ast._Unparser
+class CppUnparser(Unparser):
     def visit_CppCodeBlock(self, node):
         self.fill("{")
         self.traverse(node)
