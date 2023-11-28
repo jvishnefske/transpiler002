@@ -1,3 +1,10 @@
+[tox]
+isolated_build = true
+
+[testenv]
+deps = "pytest"
+commands = "pytest src/tests --import-mode importlib"
+
 [tool.poetry]
 name = "transpile"
 version = "0.1.0"
@@ -5,16 +12,9 @@ description = ""
 authors = ["John Vishnefske <jvishnefske+git@gmail.com>"]
 readme = "README.md"
 
-[tox]
-isolated_build = true
-
-[testenv]
-allowlist_externals = "poetry"
-commands_pre = "poetry install --no-root --sync"
-commands = "poetry run pytest tests --import-mode importlib"
-
 [tool.poetry.dependencies]
 python = "^3.9"
+
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
