@@ -5,7 +5,7 @@ from pathlib import Path
 
 import cppyy
 import graphlib
-from transpile.generator import PyToCppTransformer, read_ast, to_cpp
+from src.transpile.generator import PyToCppTransformer, read_ast, to_cpp
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("test")

@@ -1,19 +1,41 @@
+[tox]
+isolated_build = true
+
+[testenv]
+deps = "pytest"
+commands = "pytest src/tests --import-mode importlib"
+
 [tool.poetry]
 name = "transpile"
 version = "0.1.0"
 description = ""
-authors = ["John Vishnefske <jvishnefske@gmail.com>"]
+authors = ["John Vishnefske <jvishnefske+git@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-cppyy = "3.1.2"
-Jinja2 = "3.1.2"
+
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
 pytest-cov = "^3.0"
+cppyy = "^3.1.2"
+mypy = "^1.7.1"
+flake8 = "^6.1.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+python_version = "3.7"
+warn_return_any = true
+warn_unused_configs = true
+exclude = [
+    '^file1\.py$',  # TOML literal string (single-quotes, no escaping necessary)
+    "^file2\\.py$",  # TOML basic string (double-quotes, backslash and other characters need escaping)
+]
+
+[[tool.mypy.overrides]]
+module = "transpile"
+warn_return_any = false
