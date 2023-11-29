@@ -38,7 +38,7 @@ jobs:
         poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Check with mypy
       run: |
-        poetry run mypy -m transform
+        poetry run mypy -m transpile
     - name: Test with pytest
       run: |
         poetry run pytest
