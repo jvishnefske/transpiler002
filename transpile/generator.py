@@ -1,7 +1,19 @@
 import ast
+import queue
+
+Unparser = ast._Unparser
+
+
+def transformer_list():
+    return [CppTransformer, PyToCppTransformer, CppUnparser]
+
+
 # import inspect
 from transpile.details import cpp_reserved, c_reserved
 from contextlib import contextmanager
+import dataclasses
+from collections import defaultdict
+from typing import union
 
 
 def read_ast(testfile):
@@ -124,7 +136,39 @@ class PyToCppTransformer(ast.NodeTransformer):
         return CppDefinition(body=node)
 
 
-Unparser = ast._Unparser
+class CppContextTransformer(ast.NodeTransformer):
+    """
+    Attempt to transform python assignments, and
+    create sane cpp definitions considering odr.
+    """
+    # Class variable to store the nested context stack
+    nested_context = []
+
+    def visit_Assign(self, node):
+        # Check if the assignment is inside a class or function definition
+        nested_context = None
+        for parent in node.get_parent():
+            if isinstance(parent, ast.ClassDef) or isinstance(parent, ast.FunctionDef):
+                nested_context = parent
+                break
+
+        # If a nested context exists, push the current variable name and type onto the stack
+        if nested_context:
+            self.nested_context.append((node.targets[0].id, node.targets[0].type))
+
+        # Visit the assigned value
+        value = self.visit(node.value)
+
+        # If a nested context exists, pop the last entry from the stack
+        if nested_context:
+            self.nested_context.pop()
+
+        # Construct the CppAssign or insert CppDefinition based on the nested context
+        if nested_context:
+            nested_context.cpp_block.insert_child(CppDefinition(target=node.targets[0].id, value=value))
+            return None
+        else:
+            return CppAssign(target=node.targets[0].id, value=value)
 
 
 class CppUnparser(Unparser):
@@ -196,9 +240,9 @@ class CppUnparser(Unparser):
     @contextmanager
     def cppblock(self, *, extra=None):
         """A context manager for preparing the source for blocks. It adds
-        the character':', increases the indentation on enter and decreases
+        the character'{', increases the indentation on enter and decreases
         the indentation on exit. If *extra* is given, it will be directly
-        appended after the colon character.
+        appended after the character.
         """
         self.write("{")
         if extra:
