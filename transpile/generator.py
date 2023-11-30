@@ -252,3 +252,56 @@ class CppUnparser(Unparser):
         yield
         self._indent -= 1
         self.write("}")
+        self.write(node.value)
+        self.write("\n*/\n")
+
+    def visit_CppInclude(self, node):
+        self.write(f'#include "{node.value}"\n')
+
+    def visit_CppCode(self, node):
+        self.write(f'{node.value}')
+
+    def arg_helper(self, node):
+        if node:
+            self.traverse(node)
+            return ""
+        # if len(node) > 0:
+        #     return ",".join([f"{a.annotation.attr} {a.arg}" for a in node])
+        else:
+            return "/*empty*/"
+
+    def visit_CppFunctionDef(self, node):
+        self.write(f'auto {node.name}(')
+        self.traverse(node.args)
+        self.write(') ')
+        if node.returns:
+            self.write('-> ')
+            # self.write(f'{node.returns.attr}')
+            self.traverse(node.returns)
+        # self.write('{\n')
+        self.traverse(node.body)
+        # self.write('}\n');
+
+    def visit_CppStatement(self, node):
+        self.traverse(node.body)
+        self.write(';\n')
+
+    def visit_arguments(self, node):
+        if node:
+            self.write(', '.join(
+                [f'{arg.annotation.id} {arg.arg}' for arg in node.args]))
+
+    @contextmanager
+    def cppblock(self, *, extra=None):
+        """A context manager for preparing the source for blocks. It adds
+        the character':', increases the indentation on enter and decreases
+        the indentation on exit. If *extra* is given, it will be directly
+        appended after the colon character.
+        """
+        self.write("{")
+        if extra:
+            self.write(extra)
+        self._indent += 1
+        yield
+        self._indent -= 1
+        self.write("}")

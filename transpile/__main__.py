@@ -18,7 +18,8 @@ def main():
     parser = argparse.ArgumentParser(description="Process a Python file")
 
     parser.add_argument("input_file", help="Input file name", type=Path)
-    parser.add_argument("-o", "--output", help="Output file name", default=None)
+    parser.add_argument(
+        "-o", "--output", help="Output file name", default=None)
     # parser.add_argument('-v', '--verbose', help='verbose output')
     logging.basicConfig(level=logging.INFO)
 
