@@ -5,8 +5,20 @@ from pathlib import Path
 import cppyy
 from transpile import generator
 from transpile.generator import read_ast, to_cpp
-from transpile.ir_nodes import (CDeclarationStmt, CIdentifierExpr,
-                                CSimpleAssignmentStmt, CLiteralExpr)
+import importlib
+from transpile.ir_nodes import (
+    CDeclarationStmt,
+    CIdentifierExpr,
+    CSimpleAssignmentStmt,
+    CLiteralExpr,
+    CFunctionDef,
+)
+from transpile.modular import (
+    VariableScopeTransformer,
+    ControlFlowTransformer,
+    CCodeTransformer,
+    CppUnparser,
+)
 
 # logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,8 +30,9 @@ def test_dumpast():
     my_ast = None
     my_ast = read_ast(testfile)
     logger.info(my_ast)
-    logger.info(ast.dump(
-        my_ast, annotate_fields=True, include_attributes=False, indent="  "))
+    logger.info(
+        ast.dump(my_ast, annotate_fields=True, include_attributes=False, indent="  ")
+    )
     logger.info(ast.unparse(my_ast))
     logger.info("ast test complete.")
 
@@ -30,8 +43,7 @@ def test_src_transformation():
     _ = tree
     transformer = generator.PyToCppTransformer()
     src_code_generator = generator.CppUnparser()
-    print(ast.dump(
-        tree, annotate_fields=True, include_attributes=False, indent=" "))
+    print(ast.dump(tree, annotate_fields=True, include_attributes=False, indent=" "))
     _ = transformer.visit(_)
 
     print(f"after transform: \n {ast.dump(_)}")
@@ -56,9 +68,7 @@ def test_unparse():
     std::cout << "hello" <<std::endl;
     }
     """
-    my_ast = [
-        ast.Name(id=src)
-    ]
+    my_ast = [ast.Name(id=src)]
     result = ast.unparse(my_ast)
     assert result == src
 
@@ -92,6 +102,11 @@ def test_cidentifier_expr():
     assert identifier_expr.name == "x"
 
 
+def test_cfunction_fields():
+    c_function = CFunctionDef(name="hame", body=[], return_type="uint64_t", parameters=[])
+    assert c_function._fields == ["name", "return_type", "parameters", "body"]
+
+
 def test_csimple_assignment_stmt():
     """Test the CSimpleAssignmentStmt node."""
     assign_stmt = CSimpleAssignmentStmt(
@@ -112,3 +127,34 @@ def test_cdeclaration_stmt():
     assert declare_stmt.data_type == "int"
     assert declare_stmt.declaration.target.name == "x"
     assert declare_stmt.declaration.value.value == 10
+
+
+def test_cpp_generation_2():
+    # reset global c++ namespace from previous tests.
+    cppyy.gbl=[]
+    importlib.reload(cppyy)
+    # Parse the Python code
+    tree = read_ast(testfile)
+
+    # Transform the Python AST
+    variable_scope_transformer = VariableScopeTransformer()
+    variable_scope_transformer.visit(tree)
+
+    control_flow_transformer = ControlFlowTransformer()
+    control_flow_transformer.visit(tree)
+
+    c_code_transformer = CCodeTransformer()
+    c_code = c_code_transformer.visit(tree)
+
+    # Convert C code to C++
+    cpp_unparser = CppUnparser()
+    cpp_src = cpp_unparser.visit(c_code)
+
+    # Use Cppyy to generate C++ code
+    print(ast.dump(c_code, indent=" "))
+    print(cpp_src)
+
+    cppyy.cppdef(cpp_src)
+
+    # Assert that the generated C++ code is valid
+    assert True

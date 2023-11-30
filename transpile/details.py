@@ -192,25 +192,26 @@ class CppSourceDumper(UnparserBase):
     def visit_CppParameter(self, node):
         self.write(f"{node.type} {node.name}")
 
-class CppAstTransformer(ast.NodeTransformer):
-    def __init__(self):
-        self.variable_stack = []  # Stack to track variable scopes
-
-    def visit_Assign(self, node):
-        # Check if the assignment introduces a new variable
-        if isinstance(node.targets[0], ast.Name):
-            # Define the variable in the current scope
-            self.define_variable(node.targets[0].id, None)
-
-        # Visit the assigned value
-        value = self.visit(node.value)
-
-        # Construct the CppAssignment
-        return CppAssignment(target=node.targets[0].id, value=value)
-
-    def visit_FunctionDef(self, node):
-        # Push the function scope onto the stack
-        self.variable_stack.append([])
-
-        # Visit the function's arguments
-        args = self.visit(node.args)
+# unused
+# class CppAstTransformer(ast.NodeTransformer):
+#     def __init__(self):
+#         self.variable_stack = []  # Stack to track variable scopes
+#
+#     def visit_Assign(self, node):
+#         # Check if the assignment introduces a new variable
+#         if isinstance(node.targets[0], ast.Name):
+#             # Define the variable in the current scope
+#             self.define_variable(node.targets[0].id, None)
+#
+#         # Visit the assigned value
+#         value = self.visit(node.value)
+#
+#         # Construct the CppAssignment
+#         return CppAssignment(target=node.targets[0].id, value=value)
+#
+#     def visit_FunctionDef(self, node):
+#         # Push the function scope onto the stack
+#         self.variable_stack.append([])
+#
+#         # Visit the function's arguments
+#         args = self.visit(node.args)

@@ -1,5 +1,6 @@
 # file to parse, and attempt to create python
 
+
 def square(a: int) -> int:
     return a * a
 

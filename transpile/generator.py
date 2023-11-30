@@ -1,7 +1,11 @@
+"""
+this is an old implementation which is kept around so that parts may be incorporated into the
+modular transformers.
+"""
 import ast
-from transpile.details import cpp_reserved, c_reserved
 from contextlib import contextmanager
 from transpile.ir_nodes import CSimpleAssignmentStmt
+from transpile.details import cpp_reserved, c_reserved
 
 Unparser = ast._Unparser
 
@@ -172,6 +176,10 @@ class CppContextTransformer(ast.NodeTransformer):
 
 
 class CppUnparser(Unparser):
+    """
+    note that one of the quirks of using the ast Unparser base
+    is that any time visit is called the source code is cleared.
+    """
     def visit_CppCodeBlock(self, node):
         with self.cppblock():
             self.traverse(node.body)
@@ -252,14 +260,12 @@ class CppUnparser(Unparser):
         yield
         self._indent -= 1
         self.write("}")
-        self.write(node.value)
-        self.write("\n*/\n")
 
     def visit_CppInclude(self, node):
         self.write(f'#include "{node.value}"\n')
 
     def visit_CppCode(self, node):
-        self.write(f'{node.value}')
+        self.write(f"{node.value}")
 
     def arg_helper(self, node):
         if node:
@@ -271,11 +277,11 @@ class CppUnparser(Unparser):
             return "/*empty*/"
 
     def visit_CppFunctionDef(self, node):
-        self.write(f'auto {node.name}(')
+        self.write(f"auto {node.name}(")
         self.traverse(node.args)
-        self.write(') ')
+        self.write(") ")
         if node.returns:
-            self.write('-> ')
+            self.write("-> ")
             # self.write(f'{node.returns.attr}')
             self.traverse(node.returns)
         # self.write('{\n')
@@ -284,12 +290,13 @@ class CppUnparser(Unparser):
 
     def visit_CppStatement(self, node):
         self.traverse(node.body)
-        self.write(';\n')
+        self.write(";\n")
 
     def visit_arguments(self, node):
         if node:
-            self.write(', '.join(
-                [f'{arg.annotation.id} {arg.arg}' for arg in node.args]))
+            self.write(
+                ", ".join([f"{arg.annotation.id} {arg.arg}" for arg in node.args])
+            )
 
     @contextmanager
     def cppblock(self, *, extra=None):

@@ -5,10 +5,14 @@ import ast
 
 def cnode(cls=None):
     def wrap(cls):
-        print(help(cls))
-        cls = dataclasses.dataclass(cls, frozen=True)
+        # mutability is used in the visitor methods inside ast NodeTransformer.
+        # hashability is also
+        cls = dataclasses.dataclass(cls, frozen=False, unsafe_hash=True)
         cls_dict = cls_dict = dict(cls.__dict__)
-        cls_dict["_fields"] = [str(f) for f in dataclasses.fields(cls)]
+
+        cls_dict["_fields"] = [str(f.name) for f in dataclasses.fields(cls)]
+        print(f"definition {cls.__name__} ## {cls_dict['_fields']} ## {dataclasses.fields(cls)}")
+
         cls = type(cls)(cls.__name__, (ast.AST,) + cls.__bases__, cls_dict)
         assert issubclass(cls, ast.AST)
         return cls
@@ -17,7 +21,7 @@ def cnode(cls=None):
         # We're called with parens.
         return wrap
 
-    # We're called as @dataclass without parens.
+    # We're called as @cnode without parens.
     return wrap(cls)
 
 
