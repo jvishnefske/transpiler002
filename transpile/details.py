@@ -1,3 +1,8 @@
+"""this file needs to be rewritten with modular ir_nodes."""
+import ast
+
+UnparserBase = ast._Unparser
+
 c_reserved = [
     "auto",
     "break",
@@ -131,7 +136,10 @@ cpp_reserved = [
     "friend",
     "false",
 ]
+
+
 # here is an experimental version which does not work.
+
 
 class CppSourceDumper(UnparserBase):
     def __init__(self):
@@ -206,56 +214,3 @@ class CppAstTransformer(ast.NodeTransformer):
 
         # Visit the function's arguments
         args = self.visit(node.args)
-
-        # Define the function arguments as variables
-        for arg in args:
-            self.define_variable(arg.name, arg.type)
-
-        # Visit the function body
-        body = self.visit_stmts(node.body)
-
-        # Pop the function scope from the stack
-        self.variable_stack.pop()
-
-        # Construct the CppFunctionDeclaration
-        return CppFunctionDeclaration(
-            name=node.name, return_type=self.visit(node.returns), args=args, body=body
-        )
-
-    def visit_Lambda(self, node):
-        # Push the lambda scope onto the stack
-        self.variable_stack.append([])
-
-        # Visit the lambda's arguments
-        args = self.visit(node.args)
-
-        # Define the lambda arguments as variables
-        for arg in args:
-            self.define_variable(arg.name, arg.type)
-
-        # Visit the lambda body
-        body = self.visit_stmt(node.body)
-
-        # Pop the lambda scope from the stack
-        self.variable_stack.pop()
-
-        # Construct the CppLambda
-        return CppLambda(args=args, body=body)
-
-    def visit_Return(self, node):
-        # Check if the return statement has a value
-        if node.value:
-            return CppReturn(value=self.visit(node.value))
-        else:
-            return CppReturn()
-
-    def define_variable(self, name, type_annotation):
-        # Get the current scope
-        current_scope = self.variable_stack[-1]
-
-        # Check if the variable exists in the current scope
-        if name in current_scope:
-            raise ValueError(f"Variable '{name}' already defined in the current scope")
-
-        # Add the variable to the current scope
-        current_scope.append((name, type_annotation))

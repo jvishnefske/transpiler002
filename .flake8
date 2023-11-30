@@ -1,0 +1,3 @@
+[flake8]
+# for compatibility with default black tool settings.
+max-line-length = 87

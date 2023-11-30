@@ -1,1 +1,1 @@
-__all__ = ['generator', 'details', '__main__']
+__all__ = ["generator", "details", "__main__", "ir_nodes"]
