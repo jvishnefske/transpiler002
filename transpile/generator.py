@@ -1,5 +1,4 @@
 import ast
-from transpile.details import cpp_reserved, c_reserved
 from contextlib import contextmanager
 from transpile.ir_nodes import CSimpleAssignmentStmt
 
