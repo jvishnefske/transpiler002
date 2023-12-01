@@ -87,9 +87,9 @@ class VariableScopeTransformer(TransformerBase):
                         value=self.visit(node.value),
                     ),
                 )
-                node.value = declaration_stmt
+                #node.value = declaration_stmt
 
-        return node
+        return declaration_stmt
 
     def visit_FunctionDef(self, node):
         self.scope_stack.append({})  # Create a new scope for the function body
@@ -128,8 +128,11 @@ class ControlFlowTransformer(TransformerBase):
         if_stmt = CIfStmt(
             cond_expr=condition_expr, then_block=then_block, else_block=else_block
         )
+        if condition_expr.left == "__name__":
+            return None
 
-        return if_stmt
+        # todo we need a way to convert the __name__ if statements.
+        return None
 
     def visit_While(self, node):
         # Analyze the condition expression and extract relevant information
@@ -281,9 +284,9 @@ class UnparserBase(UnparserPython):
     @contextlib.contextmanager
     def cstatement(self):
         """Context manager for printing a statement ending with a semicolon."""
-        with self.cblock():
-            yield
+        yield
         self.write(";")
+        self.fill()
 
 
 class CUnparser(UnparserBase):

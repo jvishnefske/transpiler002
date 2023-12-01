@@ -19,12 +19,17 @@ from transpile.modular import (
     CCodeTransformer,
     CppUnparser,
 )
+import copy
 
+cppyy_glbl_backup = copy.deepcopy(cppyy.gbl)
 # logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-testfile = Path(__file__).parent / "example/input01.py"
 
+def get_file_name(number=1):
+    testfile = Path(__file__).parent / f"example/input0{number}.py"
+    return testfile
+testfile = get_file_name()
 
 def test_dumpast():
     my_ast = None
@@ -130,11 +135,8 @@ def test_cdeclaration_stmt():
 
 
 def test_cpp_generation_2():
-    # reset global c++ namespace from previous tests.
-    cppyy.gbl=[]
-    importlib.reload(cppyy)
-    # Parse the Python code
-    tree = read_ast(testfile)
+    # consider resetting cppyy global c++ namespace from previous tests.
+    tree = read_ast(get_file_name(2))
 
     # Transform the Python AST
     variable_scope_transformer = VariableScopeTransformer()
