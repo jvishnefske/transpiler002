@@ -1,7 +1,17 @@
+"""
+this is an old implementation which is kept around so that parts may be incorporated into the
+modular transformers.
+"""
 import ast
-# import inspect
-from transpile.details import cpp_reserved, c_reserved
 from contextlib import contextmanager
+from transpile.ir_nodes import CSimpleAssignmentStmt
+from transpile.details import cpp_reserved, c_reserved
+
+Unparser = ast._Unparser
+
+
+def transformer_list():
+    return [PyToCppTransformer, CppUnparser]
 
 
 def read_ast(testfile):
@@ -53,11 +63,13 @@ class CppFunctionDef(ast.AST):
 
 class CppStatement(ast.AST):
     """a statement ending in a semicolon"""
+
     _fields = ["body"]
 
 
 class CppDefinition(ast.AST):
     """a statement ending in a semicolon"""
+
     _fields = ["body"]
 
 
@@ -124,10 +136,50 @@ class PyToCppTransformer(ast.NodeTransformer):
         return CppDefinition(body=node)
 
 
-Unparser = ast._Unparser
+class CppContextTransformer(ast.NodeTransformer):
+    """
+    Attempt to transform python assignments, and
+    create sane cpp definitions considering odr.
+    """
+
+    # Class variable to store the nested context stack
+    nested_context = []
+
+    def visit_Assign(self, node):
+        # Check if the assignment is inside a class or function definition
+        nested_context = None
+        for parent in node.get_parent():
+            if isinstance(parent, ast.ClassDef) or isinstance(parent, ast.FunctionDef):
+                nested_context = parent
+                break
+
+        # If a nested context exists, push the current
+        # variable name and type onto the stack
+        if nested_context:
+            self.nested_context.append((node.targets[0].id, node.targets[0].type))
+
+        # Visit the assigned value
+        value = self.visit(node.value)
+
+        # If a nested context exists, pop the last entry from the stack
+        if nested_context:
+            self.nested_context.pop()
+
+        # Construct the CppAssign or insert CppDefinition based on the nested context
+        if nested_context:
+            nested_context.cpp_block.insert_child(
+                CppDefinition(target=node.targets[0].id, value=value)
+            )
+            return None
+        else:
+            return CSimpleAssignmentStmt(target=node.targets[0].id, value=value)
 
 
 class CppUnparser(Unparser):
+    """
+    note that one of the quirks of using the ast Unparser base
+    is that any time visit is called the source code is cleared.
+    """
     def visit_CppCodeBlock(self, node):
         with self.cppblock():
             self.traverse(node.body)
@@ -161,7 +213,7 @@ class CppUnparser(Unparser):
         self.write(f'#include "{node.value}"\n')
 
     def visit_CppCode(self, node):
-        self.write(f'{node.value}')
+        self.write(f"{node.value}")
 
     def arg_helper(self, node):
         if node:
@@ -173,11 +225,11 @@ class CppUnparser(Unparser):
             return "/*empty*/"
 
     def visit_CppFunctionDef(self, node):
-        self.write(f'auto {node.name}(')
+        self.write(f"auto {node.name}(")
         self.traverse(node.args)
-        self.write(') ')
+        self.write(") ")
         if node.returns:
-            self.write('-> ')
+            self.write("-> ")
             # self.write(f'{node.returns.attr}')
             self.traverse(node.returns)
         # self.write('{\n')
@@ -186,12 +238,65 @@ class CppUnparser(Unparser):
 
     def visit_CppStatement(self, node):
         self.traverse(node.body)
-        self.write(';\n')
+        self.write(";\n")
 
     def visit_arguments(self, node):
         if node:
-            self.write(', '.join(
-                [f'{arg.annotation.id} {arg.arg}' for arg in node.args]))
+            self.write(
+                ", ".join([f"{arg.annotation.id} {arg.arg}" for arg in node.args])
+            )
+
+    @contextmanager
+    def cppblock(self, *, extra=None):
+        """A context manager for preparing the source for blocks. It adds
+        the character'{', increases the indentation on enter and decreases
+        the indentation on exit. If *extra* is given, it will be directly
+        appended after the character.
+        """
+        self.write("{")
+        if extra:
+            self.write(extra)
+        self._indent += 1
+        yield
+        self._indent -= 1
+        self.write("}")
+
+    def visit_CppInclude(self, node):
+        self.write(f'#include "{node.value}"\n')
+
+    def visit_CppCode(self, node):
+        self.write(f"{node.value}")
+
+    def arg_helper(self, node):
+        if node:
+            self.traverse(node)
+            return ""
+        # if len(node) > 0:
+        #     return ",".join([f"{a.annotation.attr} {a.arg}" for a in node])
+        else:
+            return "/*empty*/"
+
+    def visit_CppFunctionDef(self, node):
+        self.write(f"auto {node.name}(")
+        self.traverse(node.args)
+        self.write(") ")
+        if node.returns:
+            self.write("-> ")
+            # self.write(f'{node.returns.attr}')
+            self.traverse(node.returns)
+        # self.write('{\n')
+        self.traverse(node.body)
+        # self.write('}\n');
+
+    def visit_CppStatement(self, node):
+        self.traverse(node.body)
+        self.write(";\n")
+
+    def visit_arguments(self, node):
+        if node:
+            self.write(
+                ", ".join([f"{arg.annotation.id} {arg.arg}" for arg in node.args])
+            )
 
     @contextmanager
     def cppblock(self, *, extra=None):
