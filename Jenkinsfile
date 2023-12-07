@@ -7,13 +7,13 @@ pipeline {
     stages {
         stage('Build') {
             steps{
-                poetry install
+                sh 'poetry install'
             }
         }
         stage('Test'){
             steps{
-                poetry run flake8
-                poetry run pytest
+                sh 'poetry run flake8'
+                sh 'poetry run pytest'
             }    
         }
     }
